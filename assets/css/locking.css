@@ -1,0 +1,98 @@
+/* Store MM Product Locking Styles */
+.store-mm-lock-notice {
+    background: #fff8e1;
+    border: 2px solid #ffd54f;
+    border-radius: 8px;
+    padding: 25px;
+    margin: 20px 0;
+    text-align: center;
+}
+
+.store-mm-lock-notice h3 {
+    color: #c49000;
+    margin: 0 0 15px 0;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.store-mm-lock-notice p {
+    color: #666;
+    margin: 0 0 20px 0;
+    line-height: 1.6;
+}
+
+.store-mm-lock-icon {
+    font-size: 24px;
+}
+
+.store-mm-state-indicator {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 10px 0;
+}
+
+.store-mm-state-prototyping {
+    background: #e0f2fe;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+.store-mm-state-approved {
+    background: #dcfce7;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.store-mm-state-rejected {
+    background: #fee2e2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+}
+
+.store-mm-state-changes_requested {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.store-mm-state-submitted {
+    background: #f0f9ff;
+    color: #0369a1;
+    border: 1px solid #bae6fd;
+}
+
+/* Edit button states */
+.store-mm-edit-button {
+    position: relative;
+}
+
+.store-mm-edit-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.store-mm-edit-button:disabled::after {
+    content: " (Locked)";
+    font-size: 12px;
+    color: #999;
+}
+
+/* Field locking */
+.store-mm-field-locked {
+    background: #f5f5f5 !important;
+    border-color: #e0e0e0 !important;
+    color: #666 !important;
+    cursor: not-allowed !important;
+}
+
+.store-mm-field-locked::placeholder {
+    color: #999 !important;
+}
