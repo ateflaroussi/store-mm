@@ -161,6 +161,7 @@ jQuery(function($){
                 const newVal = currentVal - step;
                 if (newVal >= min) {
                     $input.val(newVal).trigger('change');
+                    updateButtonStates($input);
                 }
             });
             
@@ -178,6 +179,7 @@ jQuery(function($){
                 const newVal = currentVal + step;
                 if (newVal <= max) {
                     $input.val(newVal).trigger('change');
+                    updateButtonStates($input);
                 }
             });
             
