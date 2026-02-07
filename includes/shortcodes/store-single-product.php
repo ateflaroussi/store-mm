@@ -388,7 +388,11 @@ function store_mm_render_store_product_layout($product, $product_id) {
                                            name="quantity" 
                                            value="1" 
                                            min="1" 
-                                           max="<?php echo esc_attr($product->get_max_purchase_quantity() ?: ''); ?>"
+                                           max="<?php 
+                                               $max_qty = $product->get_max_purchase_quantity();
+                                               // Convert -1 (unlimited) to 9999 to avoid validation issues
+                                               echo esc_attr($max_qty > 0 ? $max_qty : 9999);
+                                           ?>"
                                            step="1"
                                            aria-label="<?php esc_attr_e('Product quantity', 'store-mm'); ?>">
                                     <button type="button" class="store-mm-quantity-plus" aria-label="<?php esc_attr_e('Increase quantity', 'store-mm'); ?>">+</button>

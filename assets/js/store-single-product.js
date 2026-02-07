@@ -123,6 +123,30 @@ jQuery(function($){
         
         // ========== FIXED: Quantity Controls ==========
         function initQuantityControls() {
+            // Update button states based on current value
+            function updateButtonStates($input) {
+                const currentVal = parseInt($input.val()) || 1;
+                const min = parseInt($input.attr('min')) || 1;
+                const max = parseInt($input.attr('max')) || 9999;
+                const $controls = $input.closest('.store-mm-quantity-controls');
+                const $minusBtn = $controls.find('.store-mm-quantity-minus');
+                const $plusBtn = $controls.find('.store-mm-quantity-plus');
+                
+                // Disable minus button at minimum
+                if (currentVal <= min) {
+                    $minusBtn.prop('disabled', true);
+                } else {
+                    $minusBtn.prop('disabled', false);
+                }
+                
+                // Disable plus button at maximum
+                if (currentVal >= max) {
+                    $plusBtn.prop('disabled', true);
+                } else {
+                    $plusBtn.prop('disabled', false);
+                }
+            }
+            
             // Quantity minus button
             $(document).on('click', '.store-mm-quantity-minus', function(e) {
                 e.preventDefault();
@@ -137,8 +161,6 @@ jQuery(function($){
                 const newVal = currentVal - step;
                 if (newVal >= min) {
                     $input.val(newVal).trigger('change');
-                } else {
-                    $input.val(min).trigger('change');
                 }
             });
             
@@ -156,36 +178,44 @@ jQuery(function($){
                 const newVal = currentVal + step;
                 if (newVal <= max) {
                     $input.val(newVal).trigger('change');
-                } else {
-                    $input.val(max).trigger('change');
                 }
             });
             
             // Direct input validation
             $(document).on('change input', '.store-mm-quantity-input', function() {
                 const $input = $(this);
-                let currentVal = parseInt($input.val()) || 1;
+                let currentVal = parseInt($input.val());
                 const min = parseInt($input.attr('min')) || 1;
                 const max = parseInt($input.attr('max')) || 9999;
                 
                 // Validate input
                 if (isNaN(currentVal) || currentVal < min) {
                     $input.val(min);
+                    currentVal = min;
                 } else if (currentVal > max) {
                     $input.val(max);
+                    currentVal = max;
                 }
                 
-                // Update WooCommerce hidden input
+                // Update button states
+                updateButtonStates($input);
+                
+                // Update WooCommerce hidden input if it exists
                 const $form = $input.closest('form');
                 if ($form.length) {
-                    $form.find('input[name="quantity"]').val($input.val());
+                    const $wooInput = $form.find('input[name="quantity"]');
+                    if ($wooInput.length && $wooInput[0] !== $input[0]) {
+                        $wooInput.val($input.val());
+                    }
                 }
             });
             
-            // Initialize with correct value
+            // Initialize with correct value and button states
             $('.store-mm-quantity-input').each(function() {
-                const value = $(this).val() || 1;
-                $(this).val(value);
+                const $input = $(this);
+                const value = parseInt($input.val()) || 1;
+                $input.val(value);
+                updateButtonStates($input);
             });
         }
         

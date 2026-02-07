@@ -335,62 +335,73 @@
 }
 
 .store-mm-quantity-controls {
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 0;
-    max-width: 200px;
+    background: var(--color-white);
+    border: 2px solid var(--color-border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+}
+
+.store-mm-quantity-controls:hover {
+    border-color: var(--color-black);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .store-mm-quantity-minus,
 .store-mm-quantity-plus {
-    background: var(--color-white);
-    border: 1px solid var(--color-border);
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
+    background: transparent;
+    border: none;
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
     color: var(--color-black);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     user-select: none;
-    font-weight: 400;
+    font-weight: 600;
     line-height: 1;
-}
-
-.store-mm-quantity-minus {
-    border-right: none;
-    border-radius: 4px 0 0 4px;
-}
-
-.store-mm-quantity-plus {
-    border-left: none;
-    border-radius: 0 4px 4px 0;
+    position: relative;
 }
 
 .store-mm-quantity-minus:hover,
 .store-mm-quantity-plus:hover {
-    background: var(--color-dark-gray);
+    background: var(--color-black);
     color: var(--color-white);
-    border-color: var(--color-dark-gray);
+}
+
+.store-mm-quantity-minus:active,
+.store-mm-quantity-plus:active {
+    transform: scale(0.95);
+}
+
+.store-mm-quantity-minus:disabled,
+.store-mm-quantity-plus:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
 }
 
 .store-mm-quantity-input {
-    width: 100px;
-    height: 50px;
-    border: 1px solid var(--color-border);
-    border-left: none;
-    border-right: none;
+    width: 70px;
+    height: 48px;
+    border: none;
+    border-left: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border);
     font-size: 18px;
     text-align: center;
     color: var(--color-black);
-    background: var(--color-white);
-    font-weight: 600;
+    background: transparent;
+    font-weight: 700;
     -moz-appearance: textfield;
     margin: 0;
     padding: 0;
-    border-radius: 0;
+    outline: none;
 }
 
 .store-mm-quantity-input::-webkit-outer-spin-button,
