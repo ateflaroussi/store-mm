@@ -174,17 +174,17 @@ function store_mm_render_store_product_layout($product, $product_id) {
     $store_url = home_url('/store');
     
     // Get designer stats from designer profile table
-    $designer_products = 0;
-    $designer_approved = 0;
+    $portfolio_products_count = 0;  // Approved products in store
+    $total_designs_count = 0;        // All products/designs
     
     if ($designer_id) {
         // Get counts from designer profile table
         $portfolio_counts = store_mm_get_designer_portfolio_counts($designer_id);
         
-        // portfolio_designs = total number of designs (all products)
         // portfolio_products = number of approved products in store
-        $designer_products = $portfolio_counts['portfolio_products']; // Show approved products in store
-        $designer_approved = $portfolio_counts['portfolio_designs']; // Show total designs
+        // portfolio_designs = total number of designs (all products)
+        $portfolio_products_count = $portfolio_counts['portfolio_products'];
+        $total_designs_count = $portfolio_counts['portfolio_designs'];
     }
     ?>
     
@@ -294,11 +294,11 @@ function store_mm_render_store_product_layout($product, $product_id) {
                         
                         <div class="store-mm-designer-stats">
                             <div class="store-mm-designer-stat">
-                                <span class="store-mm-stat-value"><?php echo intval($designer_products); ?></span>
+                                <span class="store-mm-stat-value"><?php echo intval($portfolio_products_count); ?></span>
                                 <span class="store-mm-stat-label"><?php _e('Portfolio Products', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
-                                <span class="store-mm-stat-value"><?php echo intval($designer_approved); ?></span>
+                                <span class="store-mm-stat-value"><?php echo intval($total_designs_count); ?></span>
                                 <span class="store-mm-stat-label"><?php _e('Portfolio Designs', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">

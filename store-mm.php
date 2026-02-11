@@ -552,8 +552,9 @@ function store_mm_get_designer_profile($user_id) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'designer_profiles';
     
+    // Only select needed columns
     $profile = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table_name WHERE user_id = %d",
+        "SELECT portfolio_designs, portfolio_products, last_updated FROM $table_name WHERE user_id = %d",
         $user_id
     ));
     
@@ -576,7 +577,7 @@ function store_mm_update_designer_portfolio_counts($user_id) {
         'fields' => 'ids',
     ];
     $total_products_query = new WP_Query($total_products_args);
-    $portfolio_designs = $total_products_query->found_posts;
+    $portfolio_designs_count = $total_products_query->found_posts;
     
     // Count approved products in store (portfolio_products)
     $approved_products_args = [
@@ -593,7 +594,7 @@ function store_mm_update_designer_portfolio_counts($user_id) {
         'fields' => 'ids',
     ];
     $approved_products_query = new WP_Query($approved_products_args);
-    $portfolio_products = $approved_products_query->found_posts;
+    $portfolio_products_count = $approved_products_query->found_posts;
     
     // Check if profile exists
     $profile_exists = $wpdb->get_var($wpdb->prepare(
@@ -602,12 +603,12 @@ function store_mm_update_designer_portfolio_counts($user_id) {
     ));
     
     if ($profile_exists) {
-        // Update existing profile
+        // Update existing profile - store as JSON arrays for compatibility with existing schema
         $wpdb->update(
             $table_name,
             [
-                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs, null)),
-                'portfolio_products' => json_encode(array_fill(0, $portfolio_products, null)),
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs_count, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products_count, null)),
                 'last_updated' => current_time('mysql'),
             ],
             ['user_id' => $user_id],
@@ -620,8 +621,8 @@ function store_mm_update_designer_portfolio_counts($user_id) {
             $table_name,
             [
                 'user_id' => $user_id,
-                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs, null)),
-                'portfolio_products' => json_encode(array_fill(0, $portfolio_products, null)),
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs_count, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products_count, null)),
                 'created_at' => current_time('mysql'),
                 'last_updated' => current_time('mysql'),
             ],
@@ -630,8 +631,8 @@ function store_mm_update_designer_portfolio_counts($user_id) {
     }
     
     return [
-        'portfolio_designs' => $portfolio_designs,
-        'portfolio_products' => $portfolio_products,
+        'portfolio_designs' => $portfolio_designs_count,
+        'portfolio_products' => $portfolio_products_count,
     ];
 }
 
@@ -665,8 +666,13 @@ function store_mm_get_designer_portfolio_counts($user_id) {
 // Hook to update designer portfolio counts when product is saved
 add_action('save_post_product', 'store_mm_sync_designer_portfolio_on_save', 10, 3);
 function store_mm_sync_designer_portfolio_on_save($post_id, $post, $update) {
-    // Get designer ID
-    $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+    // Get designer ID - use post_author as primary, fallback to custom meta
+    $designer_id = $post->post_author;
+    
+    // If post_author is not set or is admin, try custom meta field
+    if (!$designer_id || $designer_id == 1) {
+        $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+    }
     
     if ($designer_id) {
         // Update designer portfolio counts
@@ -679,10 +685,20 @@ add_action('updated_post_meta', 'store_mm_sync_designer_portfolio_on_meta_update
 function store_mm_sync_designer_portfolio_on_meta_update($meta_id, $post_id, $meta_key, $meta_value) {
     // Only trigger on workflow state changes
     if ($meta_key === '_store_mm_workflow_state') {
-        $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+        // Get the post to access post_author
+        $post = get_post($post_id);
         
-        if ($designer_id) {
-            store_mm_update_designer_portfolio_counts($designer_id);
+        if ($post && $post->post_type === 'product') {
+            // Use post_author as primary, fallback to custom meta
+            $designer_id = $post->post_author;
+            
+            if (!$designer_id || $designer_id == 1) {
+                $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+            }
+            
+            if ($designer_id) {
+                store_mm_update_designer_portfolio_counts($designer_id);
+            }
         }
     }
 }
