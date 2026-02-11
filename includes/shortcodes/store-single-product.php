@@ -173,36 +173,18 @@ function store_mm_render_store_product_layout($product, $product_id) {
     // Get store URL (where the grid is)
     $store_url = home_url('/store');
     
-    // Get designer stats
-    $designer_products = 0;
-    $designer_approved = 0;
+    // Get designer stats from designer profile table
+    $portfolio_products_count = 0;  // Approved products in store
+    $total_designs_count = 0;        // All products/designs
     
     if ($designer_id) {
-        // Count all designer products
-        $designer_products_args = [
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'author' => $designer_id,
-            'posts_per_page' => -1,
-        ];
-        $designer_products_query = new WP_Query($designer_products_args);
-        $designer_products = $designer_products_query->found_posts;
+        // Get counts from designer profile table
+        $portfolio_counts = store_mm_get_designer_portfolio_counts($designer_id);
         
-        // Count approved designer products
-        $designer_approved_args = [
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'author' => $designer_id,
-            'meta_query' => [
-                [
-                    'key' => '_store_mm_workflow_state',
-                    'value' => STORE_MM_STATE_APPROVED,
-                ]
-            ],
-            'posts_per_page' => -1,
-        ];
-        $designer_approved_query = new WP_Query($designer_approved_args);
-        $designer_approved = $designer_approved_query->found_posts;
+        // portfolio_products = number of approved products in store
+        // portfolio_designs = total number of designs (all products)
+        $portfolio_products_count = $portfolio_counts['portfolio_products'];
+        $total_designs_count = $portfolio_counts['portfolio_designs'];
     }
     ?>
     
@@ -232,15 +214,15 @@ function store_mm_render_store_product_layout($product, $product_id) {
                                 'data-index' => $index
                             ]); ?>
                             
-                            <!-- Navigation Arrows - FIXED: Larger buttons -->
+                            <!-- Navigation Arrows - Modern Design -->
                             <div class="store-mm-gallery-nav">
                                 <button type="button" class="store-mm-nav-prev" aria-label="<?php esc_attr_e('Previous image', 'store-mm'); ?>">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M15 18l-6-6 6-6"/>
                                     </svg>
                                 </button>
                                 <button type="button" class="store-mm-nav-next" aria-label="<?php esc_attr_e('Next image', 'store-mm'); ?>">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
                                 </button>
@@ -249,8 +231,16 @@ function store_mm_render_store_product_layout($product, $product_id) {
                     <?php endforeach; ?>
                 </div>
                 
-                <!-- Thumbnails - FIXED: Better layout -->
+                <!-- Thumbnails - Modern Carousel Layout -->
                 <div class="store-mm-gallery-thumbs-container">
+                    <?php if (count($all_image_ids) > 4): ?>
+                        <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-left" aria-label="<?php esc_attr_e('Scroll thumbnails left', 'store-mm'); ?>">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                        </button>
+                    <?php endif; ?>
+                    
                     <div class="store-mm-gallery-thumbs" id="store-mm-gallery-thumbs">
                         <?php foreach ($all_image_ids as $index => $image_id): ?>
                             <div class="store-mm-gallery-thumb <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo esc_attr($index); ?>">
@@ -260,14 +250,10 @@ function store_mm_render_store_product_layout($product, $product_id) {
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    
                     <?php if (count($all_image_ids) > 4): ?>
-                        <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-left" aria-label="<?php esc_attr_e('Scroll thumbnails left', 'store-mm'); ?>">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M15 18l-6-6 6-6"/>
-                            </svg>
-                        </button>
                         <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-right" aria-label="<?php esc_attr_e('Scroll thumbnails right', 'store-mm'); ?>">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M9 18l6-6-6-6"/>
                             </svg>
                         </button>
@@ -308,12 +294,12 @@ function store_mm_render_store_product_layout($product, $product_id) {
                         
                         <div class="store-mm-designer-stats">
                             <div class="store-mm-designer-stat">
-                                <span class="store-mm-stat-value"><?php echo intval($designer_products); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Designs', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-value"><?php echo intval($portfolio_products_count); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Products', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
-                                <span class="store-mm-stat-value"><?php echo intval($designer_approved); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Published', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-value"><?php echo intval($total_designs_count); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Designs', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($sales_count); ?></span>
@@ -388,7 +374,11 @@ function store_mm_render_store_product_layout($product, $product_id) {
                                            name="quantity" 
                                            value="1" 
                                            min="1" 
-                                           max="<?php echo esc_attr($product->get_max_purchase_quantity() ?: ''); ?>"
+                                           max="<?php 
+                                               $max_qty = $product->get_max_purchase_quantity();
+                                               // Convert -1 (unlimited) to 9999 to avoid validation issues
+                                               echo esc_attr($max_qty !== -1 ? $max_qty : 9999);
+                                           ?>"
                                            step="1"
                                            aria-label="<?php esc_attr_e('Product quantity', 'store-mm'); ?>">
                                     <button type="button" class="store-mm-quantity-plus" aria-label="<?php esc_attr_e('Increase quantity', 'store-mm'); ?>">+</button>

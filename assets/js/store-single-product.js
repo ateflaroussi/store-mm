@@ -37,16 +37,61 @@ jQuery(function($){
                 showSlide(nextIndex);
             });
             
-            // Thumbnail scroll buttons
+            // Thumbnail scroll buttons - Improved smooth scrolling
             $('.store-mm-thumbs-scroll-left').on('click', function() {
                 const $container = $('#store-mm-gallery-thumbs');
-                $container.animate({ scrollLeft: $container.scrollLeft() - 100 }, 300);
+                const scrollAmount = 220; // Scroll by approximately 2 thumbnails
+                $container.animate({ 
+                    scrollLeft: $container.scrollLeft() - scrollAmount 
+                }, 400, 'swing');
             });
             
             $('.store-mm-thumbs-scroll-right').on('click', function() {
                 const $container = $('#store-mm-gallery-thumbs');
-                $container.animate({ scrollLeft: $container.scrollLeft() + 100 }, 300);
+                const scrollAmount = 220; // Scroll by approximately 2 thumbnails
+                $container.animate({ 
+                    scrollLeft: $container.scrollLeft() + scrollAmount 
+                }, 400, 'swing');
             });
+            
+            // Update scroll button visibility
+            const SCROLL_TOLERANCE = 5; // Pixels of tolerance for scroll position detection
+            
+            function updateScrollButtons() {
+                const $container = $('#store-mm-gallery-thumbs');
+                const $leftBtn = $('.store-mm-thumbs-scroll-left');
+                const $rightBtn = $('.store-mm-thumbs-scroll-right');
+                
+                if ($container.length) {
+                    const scrollLeft = $container.scrollLeft();
+                    const maxScroll = $container[0].scrollWidth - $container[0].clientWidth;
+                    
+                    // Hide/show left button based on scroll position
+                    if (scrollLeft <= SCROLL_TOLERANCE) {
+                        $leftBtn.css('opacity', '0.3').css('pointer-events', 'none');
+                    } else {
+                        $leftBtn.css('opacity', '1').css('pointer-events', 'auto');
+                    }
+                    
+                    // Hide/show right button based on scroll position
+                    if (scrollLeft >= maxScroll - SCROLL_TOLERANCE) {
+                        $rightBtn.css('opacity', '0.3').css('pointer-events', 'none');
+                    } else {
+                        $rightBtn.css('opacity', '1').css('pointer-events', 'auto');
+                    }
+                }
+            }
+            
+            // Update button visibility on scroll
+            $('#store-mm-gallery-thumbs').on('scroll', updateScrollButtons);
+            
+            // Initial update after gallery is fully initialized
+            if ($thumbs.length > 0) {
+                // Use requestAnimationFrame for better timing after DOM paint
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(updateScrollButtons);
+                });
+            }
             
             // Keyboard navigation
             $(document).on('keydown', function(e) {
@@ -123,6 +168,30 @@ jQuery(function($){
         
         // ========== FIXED: Quantity Controls ==========
         function initQuantityControls() {
+            // Update button states based on current value
+            function updateButtonStates($input) {
+                const currentVal = parseInt($input.val()) || 1;
+                const min = parseInt($input.attr('min')) || 1;
+                const max = parseInt($input.attr('max')) || 9999;
+                const $controls = $input.closest('.store-mm-quantity-controls');
+                const $minusBtn = $controls.find('.store-mm-quantity-minus');
+                const $plusBtn = $controls.find('.store-mm-quantity-plus');
+                
+                // Disable minus button at minimum
+                if (currentVal <= min) {
+                    $minusBtn.prop('disabled', true);
+                } else {
+                    $minusBtn.prop('disabled', false);
+                }
+                
+                // Disable plus button at maximum
+                if (currentVal >= max) {
+                    $plusBtn.prop('disabled', true);
+                } else {
+                    $plusBtn.prop('disabled', false);
+                }
+            }
+            
             // Quantity minus button
             $(document).on('click', '.store-mm-quantity-minus', function(e) {
                 e.preventDefault();
@@ -137,8 +206,7 @@ jQuery(function($){
                 const newVal = currentVal - step;
                 if (newVal >= min) {
                     $input.val(newVal).trigger('change');
-                } else {
-                    $input.val(min).trigger('change');
+                    updateButtonStates($input);
                 }
             });
             
@@ -156,36 +224,45 @@ jQuery(function($){
                 const newVal = currentVal + step;
                 if (newVal <= max) {
                     $input.val(newVal).trigger('change');
-                } else {
-                    $input.val(max).trigger('change');
+                    updateButtonStates($input);
                 }
             });
             
             // Direct input validation
             $(document).on('change input', '.store-mm-quantity-input', function() {
                 const $input = $(this);
-                let currentVal = parseInt($input.val()) || 1;
+                let currentVal = parseInt($input.val());
                 const min = parseInt($input.attr('min')) || 1;
                 const max = parseInt($input.attr('max')) || 9999;
                 
                 // Validate input
                 if (isNaN(currentVal) || currentVal < min) {
                     $input.val(min);
+                    currentVal = min;
                 } else if (currentVal > max) {
                     $input.val(max);
+                    currentVal = max;
                 }
                 
-                // Update WooCommerce hidden input
+                // Update button states
+                updateButtonStates($input);
+                
+                // Update WooCommerce hidden input if it exists
                 const $form = $input.closest('form');
                 if ($form.length) {
-                    $form.find('input[name="quantity"]').val($input.val());
+                    const $wooInput = $form.find('input[name="quantity"]');
+                    if ($wooInput.length && $wooInput[0] !== $input[0]) {
+                        $wooInput.val($input.val());
+                    }
                 }
             });
             
-            // Initialize with correct value
+            // Initialize with correct value and button states
             $('.store-mm-quantity-input').each(function() {
-                const value = $(this).val() || 1;
-                $(this).val(value);
+                const $input = $(this);
+                const value = parseInt($input.val()) || 1;
+                $input.val(value);
+                updateButtonStates($input);
             });
         }
         

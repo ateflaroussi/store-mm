@@ -543,6 +543,179 @@ function store_mm_ajax_get_categories() {
     wp_send_json_success($categories);
 }
 
+// ==================== DESIGNER PROFILE FUNCTIONS ====================
+
+/**
+ * Get designer profile data from wp_designer_profiles table
+ */
+function store_mm_get_designer_profile($user_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    // Only select needed columns
+    $profile = $wpdb->get_row($wpdb->prepare(
+        "SELECT portfolio_designs, portfolio_products, last_updated FROM $table_name WHERE user_id = %d",
+        $user_id
+    ));
+    
+    return $profile;
+}
+
+/**
+ * Update designer portfolio counts in the designer_profiles table
+ */
+function store_mm_update_designer_portfolio_counts($user_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    // Count gallery designs from custom designs table ONLY (exclude WooCommerce products)
+    $designs_table = $wpdb->prefix . 'designs';
+    $portfolio_designs_count = 0;
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$designs_table'") == $designs_table) {
+        $portfolio_designs_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $designs_table WHERE designer_id = %d AND (status = 'approved' OR status = 'published')",
+            $user_id
+        ));
+    }
+    
+    // Count approved products in store (portfolio_products) - WooCommerce products only
+    $approved_products_args = [
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'author' => $user_id,
+        'meta_query' => [
+            [
+                'key' => '_store_mm_workflow_state',
+                'value' => STORE_MM_STATE_APPROVED,
+            ]
+        ],
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ];
+    $approved_products_query = new WP_Query($approved_products_args);
+    $portfolio_products_count = $approved_products_query->found_posts;
+    
+    // Check if profile exists
+    $profile_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table_name WHERE user_id = %d",
+        $user_id
+    ));
+    
+    if ($profile_exists) {
+        // Update existing profile - store as JSON arrays for compatibility with existing schema
+        $wpdb->update(
+            $table_name,
+            [
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs_count, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products_count, null)),
+                'last_updated' => current_time('mysql'),
+            ],
+            ['user_id' => $user_id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+    } else {
+        // Create new profile with basic info
+        $wpdb->insert(
+            $table_name,
+            [
+                'user_id' => $user_id,
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs_count, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products_count, null)),
+                'created_at' => current_time('mysql'),
+                'last_updated' => current_time('mysql'),
+            ],
+            ['%d', '%s', '%s', '%s', '%s']
+        );
+    }
+    
+    return [
+        'portfolio_designs' => $portfolio_designs_count,
+        'portfolio_products' => $portfolio_products_count,
+    ];
+}
+
+/**
+ * Get designer portfolio counts (returns actual counts, not JSON arrays)
+ * Products and Designs are kept separate:
+ * - portfolio_products = WooCommerce approved products
+ * - portfolio_designs = Gallery designs from wp_designs table only
+ */
+function store_mm_get_designer_portfolio_counts($user_id) {
+    global $wpdb;
+    
+    // Count designs from wp_designs table ONLY (no WooCommerce products)
+    $designs_table = $wpdb->prefix . 'designs';
+    $portfolio_designs_count = 0;
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$designs_table'") == $designs_table) {
+        $portfolio_designs_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $designs_table WHERE designer_id = %d AND status = 'approved'",
+            $user_id
+        ));
+    }
+    
+    // Get portfolio_products from designer_profiles table (WooCommerce approved products)
+    $profiles_table = $wpdb->prefix . 'designer_profiles';
+    $portfolio_products_count = 0;
+    
+    $profile = $wpdb->get_row($wpdb->prepare(
+        "SELECT portfolio_products FROM $profiles_table WHERE user_id = %d",
+        $user_id
+    ));
+    
+    if ($profile) {
+        $portfolio_products = json_decode($profile->portfolio_products, true);
+        $portfolio_products_count = is_array($portfolio_products) ? count($portfolio_products) : 0;
+    }
+    
+    return [
+        'portfolio_designs' => $portfolio_designs_count,
+        'portfolio_products' => $portfolio_products_count,
+    ];
+}
+
+// Hook to update designer portfolio counts when product is saved
+add_action('save_post_product', 'store_mm_sync_designer_portfolio_on_save', 10, 3);
+function store_mm_sync_designer_portfolio_on_save($post_id, $post, $update) {
+    // Get designer ID - use post_author as primary, fallback to custom meta
+    $designer_id = $post->post_author;
+    
+    // If post_author is not set or is admin, try custom meta field
+    if (!$designer_id || $designer_id == 1) {
+        $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+    }
+    
+    if ($designer_id) {
+        // Update designer portfolio counts
+        store_mm_update_designer_portfolio_counts($designer_id);
+    }
+}
+
+// Hook to update counts when workflow state changes
+add_action('updated_post_meta', 'store_mm_sync_designer_portfolio_on_meta_update', 10, 4);
+function store_mm_sync_designer_portfolio_on_meta_update($meta_id, $post_id, $meta_key, $meta_value) {
+    // Only trigger on workflow state changes
+    if ($meta_key === '_store_mm_workflow_state') {
+        // Get the post to access post_author
+        $post = get_post($post_id);
+        
+        if ($post && $post->post_type === 'product') {
+            // Use post_author as primary, fallback to custom meta
+            $designer_id = $post->post_author;
+            
+            if (!$designer_id || $designer_id == 1) {
+                $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+            }
+            
+            if ($designer_id) {
+                store_mm_update_designer_portfolio_counts($designer_id);
+            }
+        }
+    }
+}
+
 // Check WooCommerce is active
 add_action('admin_init', 'store_mm_check_dependencies');
 function store_mm_check_dependencies() {
