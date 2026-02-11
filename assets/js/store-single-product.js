@@ -37,16 +37,54 @@ jQuery(function($){
                 showSlide(nextIndex);
             });
             
-            // Thumbnail scroll buttons
+            // Thumbnail scroll buttons - Improved smooth scrolling
             $('.store-mm-thumbs-scroll-left').on('click', function() {
                 const $container = $('#store-mm-gallery-thumbs');
-                $container.animate({ scrollLeft: $container.scrollLeft() - 100 }, 300);
+                const scrollAmount = 220; // Scroll by approximately 2 thumbnails
+                $container.animate({ 
+                    scrollLeft: $container.scrollLeft() - scrollAmount 
+                }, 400, 'swing');
             });
             
             $('.store-mm-thumbs-scroll-right').on('click', function() {
                 const $container = $('#store-mm-gallery-thumbs');
-                $container.animate({ scrollLeft: $container.scrollLeft() + 100 }, 300);
+                const scrollAmount = 220; // Scroll by approximately 2 thumbnails
+                $container.animate({ 
+                    scrollLeft: $container.scrollLeft() + scrollAmount 
+                }, 400, 'swing');
             });
+            
+            // Update scroll button visibility
+            function updateScrollButtons() {
+                const $container = $('#store-mm-gallery-thumbs');
+                const $leftBtn = $('.store-mm-thumbs-scroll-left');
+                const $rightBtn = $('.store-mm-thumbs-scroll-right');
+                
+                if ($container.length) {
+                    const scrollLeft = $container.scrollLeft();
+                    const maxScroll = $container[0].scrollWidth - $container[0].clientWidth;
+                    
+                    // Hide/show left button
+                    if (scrollLeft <= 5) {
+                        $leftBtn.css('opacity', '0.3').css('pointer-events', 'none');
+                    } else {
+                        $leftBtn.css('opacity', '1').css('pointer-events', 'auto');
+                    }
+                    
+                    // Hide/show right button
+                    if (scrollLeft >= maxScroll - 5) {
+                        $rightBtn.css('opacity', '0.3').css('pointer-events', 'none');
+                    } else {
+                        $rightBtn.css('opacity', '1').css('pointer-events', 'auto');
+                    }
+                }
+            }
+            
+            // Update button visibility on scroll
+            $('#store-mm-gallery-thumbs').on('scroll', updateScrollButtons);
+            
+            // Initial update
+            setTimeout(updateScrollButtons, 100);
             
             // Keyboard navigation
             $(document).on('keydown', function(e) {

@@ -232,15 +232,15 @@ function store_mm_render_store_product_layout($product, $product_id) {
                                 'data-index' => $index
                             ]); ?>
                             
-                            <!-- Navigation Arrows - FIXED: Larger buttons -->
+                            <!-- Navigation Arrows - Modern Design -->
                             <div class="store-mm-gallery-nav">
                                 <button type="button" class="store-mm-nav-prev" aria-label="<?php esc_attr_e('Previous image', 'store-mm'); ?>">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M15 18l-6-6 6-6"/>
                                     </svg>
                                 </button>
                                 <button type="button" class="store-mm-nav-next" aria-label="<?php esc_attr_e('Next image', 'store-mm'); ?>">
-                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <path d="M9 18l6-6-6-6"/>
                                     </svg>
                                 </button>
@@ -249,8 +249,16 @@ function store_mm_render_store_product_layout($product, $product_id) {
                     <?php endforeach; ?>
                 </div>
                 
-                <!-- Thumbnails - FIXED: Better layout -->
+                <!-- Thumbnails - Modern Carousel Layout -->
                 <div class="store-mm-gallery-thumbs-container">
+                    <?php if (count($all_image_ids) > 4): ?>
+                        <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-left" aria-label="<?php esc_attr_e('Scroll thumbnails left', 'store-mm'); ?>">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                <path d="M15 18l-6-6 6-6"/>
+                            </svg>
+                        </button>
+                    <?php endif; ?>
+                    
                     <div class="store-mm-gallery-thumbs" id="store-mm-gallery-thumbs">
                         <?php foreach ($all_image_ids as $index => $image_id): ?>
                             <div class="store-mm-gallery-thumb <?php echo $index === 0 ? 'active' : ''; ?>" data-index="<?php echo esc_attr($index); ?>">
@@ -260,14 +268,10 @@ function store_mm_render_store_product_layout($product, $product_id) {
                             </div>
                         <?php endforeach; ?>
                     </div>
+                    
                     <?php if (count($all_image_ids) > 4): ?>
-                        <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-left" aria-label="<?php esc_attr_e('Scroll thumbnails left', 'store-mm'); ?>">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M15 18l-6-6 6-6"/>
-                            </svg>
-                        </button>
                         <button type="button" class="store-mm-thumbs-scroll store-mm-thumbs-scroll-right" aria-label="<?php esc_attr_e('Scroll thumbnails right', 'store-mm'); ?>">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                 <path d="M9 18l6-6-6-6"/>
                             </svg>
                         </button>
