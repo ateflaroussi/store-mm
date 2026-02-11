@@ -55,6 +55,8 @@ jQuery(function($){
             });
             
             // Update scroll button visibility
+            const SCROLL_TOLERANCE = 5; // Pixels of tolerance for scroll position detection
+            
             function updateScrollButtons() {
                 const $container = $('#store-mm-gallery-thumbs');
                 const $leftBtn = $('.store-mm-thumbs-scroll-left');
@@ -64,15 +66,15 @@ jQuery(function($){
                     const scrollLeft = $container.scrollLeft();
                     const maxScroll = $container[0].scrollWidth - $container[0].clientWidth;
                     
-                    // Hide/show left button
-                    if (scrollLeft <= 5) {
+                    // Hide/show left button based on scroll position
+                    if (scrollLeft <= SCROLL_TOLERANCE) {
                         $leftBtn.css('opacity', '0.3').css('pointer-events', 'none');
                     } else {
                         $leftBtn.css('opacity', '1').css('pointer-events', 'auto');
                     }
                     
-                    // Hide/show right button
-                    if (scrollLeft >= maxScroll - 5) {
+                    // Hide/show right button based on scroll position
+                    if (scrollLeft >= maxScroll - SCROLL_TOLERANCE) {
                         $rightBtn.css('opacity', '0.3').css('pointer-events', 'none');
                     } else {
                         $rightBtn.css('opacity', '1').css('pointer-events', 'auto');
@@ -83,8 +85,13 @@ jQuery(function($){
             // Update button visibility on scroll
             $('#store-mm-gallery-thumbs').on('scroll', updateScrollButtons);
             
-            // Initial update
-            setTimeout(updateScrollButtons, 100);
+            // Initial update after gallery is fully initialized
+            if ($thumbs.length > 0) {
+                // Use requestAnimationFrame for better timing after DOM paint
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(updateScrollButtons);
+                });
+            }
             
             // Keyboard navigation
             $(document).on('keydown', function(e) {
