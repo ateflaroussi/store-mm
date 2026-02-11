@@ -638,21 +638,35 @@ function store_mm_update_designer_portfolio_counts($user_id) {
 
 /**
  * Get designer portfolio counts (returns actual counts, not JSON arrays)
- * Queries wp_designs table directly for real-time data, matching designer-profile behavior
+ * Matches designer-profile plugin exactly: total_designs = product_count + design_count
  */
 function store_mm_get_designer_portfolio_counts($user_id) {
     global $wpdb;
     
-    // Query wp_designs table directly for real-time count (same as designer-profile)
+    // Count WooCommerce products (same as designer-profile)
+    $args = [
+        'post_type' => 'product',
+        'author' => $user_id,
+        'post_status' => 'publish',
+        'posts_per_page' => -1,
+        'fields' => 'ids'
+    ];
+    $products = new WP_Query($args);
+    $product_count = $products->post_count;
+    
+    // Count designs from wp_designs table (same as designer-profile)
     $designs_table = $wpdb->prefix . 'designs';
-    $portfolio_designs_count = 0;
+    $design_count = 0;
     
     if ($wpdb->get_var("SHOW TABLES LIKE '$designs_table'") == $designs_table) {
-        $portfolio_designs_count = $wpdb->get_var($wpdb->prepare(
+        $design_count = $wpdb->get_var($wpdb->prepare(
             "SELECT COUNT(*) FROM $designs_table WHERE designer_id = %d AND status = 'approved'",
             $user_id
         ));
     }
+    
+    // Total designs = products + designs (matches designer-profile exactly)
+    $portfolio_designs_count = $product_count + $design_count;
     
     // Get portfolio_products from designer_profiles table (WooCommerce approved products)
     $profiles_table = $wpdb->prefix . 'designer_profiles';
