@@ -638,29 +638,40 @@ function store_mm_update_designer_portfolio_counts($user_id) {
 
 /**
  * Get designer portfolio counts (returns actual counts, not JSON arrays)
+ * Queries wp_designs table directly for real-time data, matching designer-profile behavior
  */
 function store_mm_get_designer_portfolio_counts($user_id) {
     global $wpdb;
-    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    // Query wp_designs table directly for real-time count (same as designer-profile)
+    $designs_table = $wpdb->prefix . 'designs';
+    $portfolio_designs_count = 0;
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$designs_table'") == $designs_table) {
+        $portfolio_designs_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $designs_table WHERE designer_id = %d AND status = 'approved'",
+            $user_id
+        ));
+    }
+    
+    // Get portfolio_products from designer_profiles table (WooCommerce approved products)
+    $profiles_table = $wpdb->prefix . 'designer_profiles';
+    $portfolio_products_count = 0;
     
     $profile = $wpdb->get_row($wpdb->prepare(
-        "SELECT portfolio_designs, portfolio_products FROM $table_name WHERE user_id = %d",
+        "SELECT portfolio_products FROM $profiles_table WHERE user_id = %d",
         $user_id
     ));
     
     if ($profile) {
-        // Decode JSON arrays and count elements
-        $portfolio_designs = json_decode($profile->portfolio_designs, true);
         $portfolio_products = json_decode($profile->portfolio_products, true);
-        
-        return [
-            'portfolio_designs' => is_array($portfolio_designs) ? count($portfolio_designs) : 0,
-            'portfolio_products' => is_array($portfolio_products) ? count($portfolio_products) : 0,
-        ];
+        $portfolio_products_count = is_array($portfolio_products) ? count($portfolio_products) : 0;
     }
     
-    // If no profile exists, create it and return counts
-    return store_mm_update_designer_portfolio_counts($user_id);
+    return [
+        'portfolio_designs' => $portfolio_designs_count,
+        'portfolio_products' => $portfolio_products_count,
+    ];
 }
 
 // Hook to update designer portfolio counts when product is saved
