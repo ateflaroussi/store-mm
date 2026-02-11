@@ -577,7 +577,21 @@ function store_mm_update_designer_portfolio_counts($user_id) {
         'fields' => 'ids',
     ];
     $total_products_query = new WP_Query($total_products_args);
-    $portfolio_designs_count = $total_products_query->found_posts;
+    $product_count = $total_products_query->found_posts;
+    
+    // Also check from custom designs table if it exists (same as designer-profile plugin)
+    $designs_table = $wpdb->prefix . 'designs';
+    $design_count = 0;
+    
+    if ($wpdb->get_var("SHOW TABLES LIKE '$designs_table'") == $designs_table) {
+        $design_count = $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $designs_table WHERE designer_id = %d AND (status = 'approved' OR status = 'published')",
+            $user_id
+        ));
+    }
+    
+    // Total designs count = WooCommerce products + custom designs table
+    $portfolio_designs_count = $product_count + $design_count;
     
     // Count approved products in store (portfolio_products)
     $approved_products_args = [
