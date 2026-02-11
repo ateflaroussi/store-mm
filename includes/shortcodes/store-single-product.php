@@ -295,11 +295,11 @@ function store_mm_render_store_product_layout($product, $product_id) {
                         <div class="store-mm-designer-stats">
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($portfolio_products_count); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Portfolio Products', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Products', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($total_designs_count); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Portfolio Designs', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Designs', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($sales_count); ?></span>
