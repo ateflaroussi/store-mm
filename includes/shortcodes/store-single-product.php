@@ -173,36 +173,18 @@ function store_mm_render_store_product_layout($product, $product_id) {
     // Get store URL (where the grid is)
     $store_url = home_url('/store');
     
-    // Get designer stats
+    // Get designer stats from designer profile table
     $designer_products = 0;
     $designer_approved = 0;
     
     if ($designer_id) {
-        // Count all designer products
-        $designer_products_args = [
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'author' => $designer_id,
-            'posts_per_page' => -1,
-        ];
-        $designer_products_query = new WP_Query($designer_products_args);
-        $designer_products = $designer_products_query->found_posts;
+        // Get counts from designer profile table
+        $portfolio_counts = store_mm_get_designer_portfolio_counts($designer_id);
         
-        // Count approved designer products
-        $designer_approved_args = [
-            'post_type' => 'product',
-            'post_status' => 'publish',
-            'author' => $designer_id,
-            'meta_query' => [
-                [
-                    'key' => '_store_mm_workflow_state',
-                    'value' => STORE_MM_STATE_APPROVED,
-                ]
-            ],
-            'posts_per_page' => -1,
-        ];
-        $designer_approved_query = new WP_Query($designer_approved_args);
-        $designer_approved = $designer_approved_query->found_posts;
+        // portfolio_designs = total number of designs (all products)
+        // portfolio_products = number of approved products in store
+        $designer_products = $portfolio_counts['portfolio_products']; // Show approved products in store
+        $designer_approved = $portfolio_counts['portfolio_designs']; // Show total designs
     }
     ?>
     
@@ -313,11 +295,11 @@ function store_mm_render_store_product_layout($product, $product_id) {
                         <div class="store-mm-designer-stats">
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($designer_products); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Designs', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Portfolio Products', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($designer_approved); ?></span>
-                                <span class="store-mm-stat-label"><?php _e('Published', 'store-mm'); ?></span>
+                                <span class="store-mm-stat-label"><?php _e('Portfolio Designs', 'store-mm'); ?></span>
                             </div>
                             <div class="store-mm-designer-stat">
                                 <span class="store-mm-stat-value"><?php echo intval($sales_count); ?></span>

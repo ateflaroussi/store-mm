@@ -543,6 +543,150 @@ function store_mm_ajax_get_categories() {
     wp_send_json_success($categories);
 }
 
+// ==================== DESIGNER PROFILE FUNCTIONS ====================
+
+/**
+ * Get designer profile data from wp_designer_profiles table
+ */
+function store_mm_get_designer_profile($user_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    $profile = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table_name WHERE user_id = %d",
+        $user_id
+    ));
+    
+    return $profile;
+}
+
+/**
+ * Update designer portfolio counts in the designer_profiles table
+ */
+function store_mm_update_designer_portfolio_counts($user_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    // Count all designer products (portfolio_designs)
+    $total_products_args = [
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'author' => $user_id,
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ];
+    $total_products_query = new WP_Query($total_products_args);
+    $portfolio_designs = $total_products_query->found_posts;
+    
+    // Count approved products in store (portfolio_products)
+    $approved_products_args = [
+        'post_type' => 'product',
+        'post_status' => 'publish',
+        'author' => $user_id,
+        'meta_query' => [
+            [
+                'key' => '_store_mm_workflow_state',
+                'value' => STORE_MM_STATE_APPROVED,
+            ]
+        ],
+        'posts_per_page' => -1,
+        'fields' => 'ids',
+    ];
+    $approved_products_query = new WP_Query($approved_products_args);
+    $portfolio_products = $approved_products_query->found_posts;
+    
+    // Check if profile exists
+    $profile_exists = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM $table_name WHERE user_id = %d",
+        $user_id
+    ));
+    
+    if ($profile_exists) {
+        // Update existing profile
+        $wpdb->update(
+            $table_name,
+            [
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products, null)),
+                'last_updated' => current_time('mysql'),
+            ],
+            ['user_id' => $user_id],
+            ['%s', '%s', '%s'],
+            ['%d']
+        );
+    } else {
+        // Create new profile with basic info
+        $wpdb->insert(
+            $table_name,
+            [
+                'user_id' => $user_id,
+                'portfolio_designs' => json_encode(array_fill(0, $portfolio_designs, null)),
+                'portfolio_products' => json_encode(array_fill(0, $portfolio_products, null)),
+                'created_at' => current_time('mysql'),
+                'last_updated' => current_time('mysql'),
+            ],
+            ['%d', '%s', '%s', '%s', '%s']
+        );
+    }
+    
+    return [
+        'portfolio_designs' => $portfolio_designs,
+        'portfolio_products' => $portfolio_products,
+    ];
+}
+
+/**
+ * Get designer portfolio counts (returns actual counts, not JSON arrays)
+ */
+function store_mm_get_designer_portfolio_counts($user_id) {
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'designer_profiles';
+    
+    $profile = $wpdb->get_row($wpdb->prepare(
+        "SELECT portfolio_designs, portfolio_products FROM $table_name WHERE user_id = %d",
+        $user_id
+    ));
+    
+    if ($profile) {
+        // Decode JSON arrays and count elements
+        $portfolio_designs = json_decode($profile->portfolio_designs, true);
+        $portfolio_products = json_decode($profile->portfolio_products, true);
+        
+        return [
+            'portfolio_designs' => is_array($portfolio_designs) ? count($portfolio_designs) : 0,
+            'portfolio_products' => is_array($portfolio_products) ? count($portfolio_products) : 0,
+        ];
+    }
+    
+    // If no profile exists, create it and return counts
+    return store_mm_update_designer_portfolio_counts($user_id);
+}
+
+// Hook to update designer portfolio counts when product is saved
+add_action('save_post_product', 'store_mm_sync_designer_portfolio_on_save', 10, 3);
+function store_mm_sync_designer_portfolio_on_save($post_id, $post, $update) {
+    // Get designer ID
+    $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+    
+    if ($designer_id) {
+        // Update designer portfolio counts
+        store_mm_update_designer_portfolio_counts($designer_id);
+    }
+}
+
+// Hook to update counts when workflow state changes
+add_action('updated_post_meta', 'store_mm_sync_designer_portfolio_on_meta_update', 10, 4);
+function store_mm_sync_designer_portfolio_on_meta_update($meta_id, $post_id, $meta_key, $meta_value) {
+    // Only trigger on workflow state changes
+    if ($meta_key === '_store_mm_workflow_state') {
+        $designer_id = get_post_meta($post_id, '_store_mm_designer_id', true);
+        
+        if ($designer_id) {
+            store_mm_update_designer_portfolio_counts($designer_id);
+        }
+    }
+}
+
 // Check WooCommerce is active
 add_action('admin_init', 'store_mm_check_dependencies');
 function store_mm_check_dependencies() {
